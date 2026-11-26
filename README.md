@@ -18,37 +18,56 @@ Program **Asah 2026** *led by Dicoding supported by GoTo*
 
 ---
 
-## Struktur Proyek & Frontend
+## Struktur Proyek, Frontend, & Backend
 
 ```text
 CAPSTONE_PROJECT-A26-CS149/
-├── frontend/          # Antarmuka web pemilik toko (React 19 + Vite + Tailwind CSS 4)
+├── database/
+│   └── supabase_schema.sql  # Skema PostgreSQL Supabase lengkap (8 tabel, view, trigger, RPC)
+├── backend/                 # REST API Node.js + Express terhubung ke Supabase
+│   ├── src/
+│   │   ├── config/          # Konfigurasi env & client Supabase
+│   │   ├── controllers/     # Health, Categories, Products (CRUD)
+│   │   ├── middlewares/     # Async & global error handler
+│   │   ├── repositories/    # Supabase repository & in-memory dev store
+│   │   ├── routes/          # Routing /api/categories & /api/products
+│   │   └── utils/           # Validasi payload, aturan privasi, filter/sort
+│   ├── tests/               # Pengujian integrasi HTTP endpoint
+│   ├── .env.example
+│   ├── package.json
+│   └── README.md            # Dokumentasi detail & kontrak API backend
+├── frontend/                # Antarmuka web pemilik toko (React 19 + Vite + Tailwind CSS 4)
 │   ├── public/
 │   ├── src/
-│   │   ├── components/  # Sidebar, Topbar, ProductToolbar, ProductTable, StatusBadge, Pagination, dll.
-│   │   ├── layouts/     # DashboardLayout
-│   │   ├── pages/       # ProdukPage (Daftar Produk), PlaceholderPage
-│   │   ├── data/        # mockProducts.js (24 data contoh selaras skema DB)
-│   │   ├── services/    # api.js (Axios) & productService.js
-│   │   └── utils/       # stock.js (aturan status stok 0 / 1–3 / >3 pcs)
+│   │   ├── components/      # Sidebar, Topbar, ProductToolbar, ProductTable, StatusBadge, Pagination, dll.
+│   │   ├── layouts/         # DashboardLayout
+│   │   ├── pages/           # ProdukPage (Daftar Produk), PlaceholderPage
+│   │   ├── data/            # mockProducts.js (24 data contoh selaras skema DB)
+│   │   ├── services/        # api.js (Axios) & productService.js
+│   │   └── utils/           # stock.js (aturan status stok 0 / 1–3 / >3 pcs)
 │   ├── .env.example
 │   ├── package.json
 │   ├── vite.config.js
-│   └── README.md        # Dokumentasi detail khusus frontend
+│   └── README.md            # Dokumentasi detail khusus frontend
 ├── .gitignore
 └── README.md
 ```
 
-### Frontend (`frontend/`) — Progres Minggu 1
-* **Tech Stack:** React 19, Vite, Tailwind CSS 4 (`@tailwindcss/vite`), React Router, `lucide-react`, `@fontsource-variable/inter`, Axios.
-* **Fitur Saat Ini:** Layout dashboard responsif (`Sidebar`, `Topbar`), halaman **Daftar Produk** (`24` data contoh di `mockProducts.js`), pencarian, filter Kategori/Ukuran/Status Stok, pengurutan, serta paginasi (`8` item/halaman). Data masih berupa *dummy* (belum terhubung ke backend/Supabase) dan bebas dari informasi harga/margin sesuai privasi UMKM.
-* **Cara Menjalankan Lokal (Node.js 20+):**
+### Progres Minggu 1
+* **Database (`database/supabase_schema.sql`):** Skema PostgreSQL Supabase final (8 tabel, constraint lengkap, view dinamis `v_products_with_status`, trigger notifikasi otomatis, serta RPC transaksi stok atomik).
+* **Backend (`backend/`):** REST API Node.js + Express terintegrasi `@supabase/supabase-js` dengan endpoint `/api/health`, `/api/categories`, dan CRUD `/api/products` (lengkap dengan validasi stok integer `>= 0` dan penjagaan privasi tanpa harga/margin). Detail di [`backend/README.md`](./backend/README.md).
+  ```bash
+  cd backend
+  npm install
+  npm run dev
+  ```
+* **Frontend (`frontend/`):** React 19, Vite, Tailwind CSS 4 (`@tailwindcss/vite`), React Router, `lucide-react`, `@fontsource-variable/inter`, Axios — layout dashboard responsif & halaman **Daftar Produk** dengan `24` data contoh. Detail di [`frontend/README.md`](./frontend/README.md).
   ```bash
   cd frontend
   npm install
   npm run dev
   ```
-  Lalu buka `http://localhost:5173`. Detail perintah *build* dan struktur komponen tersedia di [`frontend/README.md`](./frontend/README.md).
+  Lalu buka `http://localhost:5173`.
 
 ---
 
