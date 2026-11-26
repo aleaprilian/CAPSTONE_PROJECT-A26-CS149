@@ -18,6 +18,128 @@ Program **Asah 2026** *led by Dicoding supported by GoTo*
 
 ---
 
+## Gambaran Database (Supabase / PostgreSQL)
+
+Sistem menggunakan **Supabase (PostgreSQL)** sebagai basis data utama yang diakses bersama oleh layanan Backend (Node.js/Express), AI Service (FastAPI), dan pipeline Data Science. Sesuai ketentuan privasi UMKM **Royal Thrift Store**, skema database **tidak menyimpan data harga modal, harga jual, maupun margin keuntungan**.
+
+### Entity Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    users ||--o{ stock_mutations : records
+    users ||--|| store_settings : configures
+    categories ||--o{ products : classifies
+    products ||--o{ stock_mutations : tracks
+    products ||--o{ stock_notifications : triggers
+    products ||--o{ restock_forecasts : predicts
+
+    users {
+        bigint id PK
+        varchar nama_lengkap
+        varchar nama_pengguna UK
+        text password_hash
+        varchar nomor_whatsapp
+        text foto_url
+        varchar nama_toko
+        varchar peran
+        boolean status_aktif
+        timestamptz created_at
+    }
+
+    store_settings {
+        bigint id PK
+        bigint user_id FK
+        varchar bahasa
+        varchar tema
+        int batas_stok_menipis
+        boolean notifikasi_aplikasi
+        boolean pengingat_mingguan
+        varchar hari_pengingat
+        varchar jam_pengingat
+    }
+
+    categories {
+        bigint id PK
+        varchar nama_kategori UK
+    }
+
+    products {
+        bigint id PK
+        bigint category_id FK
+        varchar nama_produk
+        varchar warna
+        product_size ukuran
+        int stok_pcs
+        text foto_url
+        varchar ai_detected_category
+        varchar ai_detected_color
+        timestamptz created_at
+    }
+
+    stock_mutations {
+        bigint id PK
+        bigint product_id FK
+        bigint user_id FK
+        mutation_type jenis
+        int jumlah
+        sales_channel kanal
+        text catatan
+        timestamptz waktu_transaksi
+    }
+
+    stock_notifications {
+        bigint id PK
+        bigint product_id FK
+        stock_alert_status tipe_status
+        text pesan
+        boolean is_read
+        timestamptz created_at
+    }
+
+    restock_forecasts {
+        bigint id PK
+        bigint product_id FK
+        int prediksi_7_hari
+        int saran_tambah_pcs
+        restock_priority prioritas
+        numeric mae
+        numeric rmse
+        timestamptz generated_at
+    }
+
+    ai_weekly_narratives {
+        bigint id PK
+        varchar periode_label UK
+        jsonb narasi_poin
+        varchar sumber
+        timestamptz generated_at
+    }
+```
+
+### Struktur Tabel Inti
+
+| Tabel | Peran & Kegunaan | Relasi & Constraint Penting |
+| :--- | :--- | :--- |
+| **`users`** | Data autentikasi & profil pemilik toko (`01 masuk`, `11 profil`). | `pk_users`, `uq_users_nama_pengguna`, validasi format username & nomor WhatsApp. |
+| **`store_settings`** | Preferensi bahasa, tema, serta ambang batas stok menipis (`09 pengaturan`). | `fk_store_settings_user` (`1:1` ke `users`), default `batas_stok_menipis = 3`, rentang `0–1000`. |
+| **`categories`** | Master kategori pakaian (`Blouse`, `Cardigan`, `Kemeja`, `Dress`, `Jaket`, `Rok`, `Celana`). | `pk_categories`, `uq_categories_nama`. |
+| **`products`** | Katalog stok aktif & hasil auto-fill Computer Vision (`03`, `04`, `05`, & sumber live RAG). | `fk_products_category` (`ON DELETE RESTRICT`), `uq_products_variant` `(nama_produk, warna, ukuran)`, `stok_pcs >= 0`. |
+| **`stock_mutations`** | Riwayat barang keluar/penjualan & stok masuk (`06 transaksi`, grafik `02`/`07`, dataset DS). | `fk_mutations_product`, `jumlah > 0`, `chk_mutations_kanal_jenis` memisahkan kanal `KELUAR` dan `MASUK`. |
+| **`stock_notifications`** | Daftar peringatan stok habis/menipis untuk badge lonceng & `10 notifikasi`. | `uq_notifications_product` (`1:1` per produk kritis), tersinkron otomatis lewat trigger. |
+| **`restock_forecasts`** | Menyimpan hasil prediksi permintaan 7 hari, saran tambah unit, `MAE`, & `RMSE` (`07`, `08`). | `uq_forecasts_product`, seluruh nilai prediksi & error metrik `>= 0`. |
+| **`ai_weekly_narratives`** | Menyimpan narasi bisnis mingguan dari LLM serta cadangan *fallback* jika kuota API habis. | `uq_ai_narratives_periode`, `sumber IN ('LLM_PROPRIETARY', 'FALLBACK_RULE')`, validasi JSON array. |
+
+### Aturan Bisnis & Otomasi Database
+
+* **Status Stok Dinamis (`v_products_with_status`):** Status produk dihitung otomatis dari `store_settings.batas_stok_menipis` (default **`3 pcs`**):
+  * `0 pcs` $\rightarrow$ **`Habis`**
+  * `1 – 3 pcs` $\rightarrow$ **`Menipis`**
+  * `> 3 pcs` $\rightarrow$ **`Tersedia`**
+* **Sinkronisasi Notifikasi Otomatis:** Trigger `trg_products_sync_notif` & `trg_settings_resync_notif` otomatis membuat notifikasi saat `stok_pcs <= batas_stok_menipis` dan menghapusnya saat stok diisi ulang melebihi batas.
+* **Transaksi Stok Atomik (`record_stock_sale` & `record_stock_in`):** Menggunakan *row-level lock* (`FOR UPDATE`) pada tabel `products` untuk mencegah stok minus dan otomatis menolak transaksi penjualan jika stok bernilai `0 pcs`.
+
+---
+
 ## Alur Branching (`Git Workflow`)
 
 - **`main`** — Branch stabil siap demo / rilis (dilindungi, hanya menerima *merge* dari `dev`).
