@@ -18,6 +18,40 @@ Program **Asah 2026** *led by Dicoding supported by GoTo*
 
 ---
 
+## Struktur Proyek & Frontend
+
+```text
+CAPSTONE_PROJECT-A26-CS149/
+├── frontend/          # Antarmuka web pemilik toko (React 19 + Vite + Tailwind CSS 4)
+│   ├── public/
+│   ├── src/
+│   │   ├── components/  # Sidebar, Topbar, ProductToolbar, ProductTable, StatusBadge, Pagination, dll.
+│   │   ├── layouts/     # DashboardLayout
+│   │   ├── pages/       # ProdukPage (Daftar Produk), PlaceholderPage
+│   │   ├── data/        # mockProducts.js (24 data contoh selaras skema DB)
+│   │   ├── services/    # api.js (Axios) & productService.js
+│   │   └── utils/       # stock.js (aturan status stok 0 / 1–3 / >3 pcs)
+│   ├── .env.example
+│   ├── package.json
+│   ├── vite.config.js
+│   └── README.md        # Dokumentasi detail khusus frontend
+├── .gitignore
+└── README.md
+```
+
+### Frontend (`frontend/`) — Progres Minggu 1
+* **Tech Stack:** React 19, Vite, Tailwind CSS 4 (`@tailwindcss/vite`), React Router, `lucide-react`, `@fontsource-variable/inter`, Axios.
+* **Fitur Saat Ini:** Layout dashboard responsif (`Sidebar`, `Topbar`), halaman **Daftar Produk** (`24` data contoh di `mockProducts.js`), pencarian, filter Kategori/Ukuran/Status Stok, pengurutan, serta paginasi (`8` item/halaman). Data masih berupa *dummy* (belum terhubung ke backend/Supabase) dan bebas dari informasi harga/margin sesuai privasi UMKM.
+* **Cara Menjalankan Lokal (Node.js 20+):**
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
+  Lalu buka `http://localhost:5173`. Detail perintah *build* dan struktur komponen tersedia di [`frontend/README.md`](./frontend/README.md).
+
+---
+
 ## Gambaran Database (Supabase / PostgreSQL)
 
 Sistem menggunakan **Supabase (PostgreSQL)** sebagai basis data utama yang diakses bersama oleh layanan Backend (Node.js/Express), AI Service (FastAPI), dan pipeline Data Science. Sesuai ketentuan privasi UMKM **Royal Thrift Store**, skema database **tidak menyimpan data harga modal, harga jual, maupun margin keuntungan**.
